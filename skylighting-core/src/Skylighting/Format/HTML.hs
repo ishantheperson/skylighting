@@ -93,12 +93,20 @@ sourceLineToHtml opts lno cont =
          prefixedLineNo = Text.unpack (lineIdPrefix opts) <> show (lineNo lno)
 
 tokenToHtml :: FormatOptions -> Token -> Html
-tokenToHtml _ (NormalTok, txt)  = toHtml txt
-tokenToHtml opts (toktype, txt) =
-  if titleAttributes opts
-     then sp ! A.title (toValue $ show toktype)
-     else sp
-   where sp = H.span ! A.class_ (toValue $ short toktype) $ toHtml txt
+tokenToHtml _ ((NormalTok, Nothing), txt)  = toHtml txt
+tokenToHtml opts ((toktype, mColor), txt) =
+  case (toktype, mColor) of 
+    (NormalTok, Just c) -> H.span ! A.style (toValue ("color: " ++ fromColor c)) $ toHtml txt 
+    (_, Just c) -> 
+      if titleAttributes opts 
+        then sp ! A.title (toValue $ show toktype) ! A.style (toValue ("color: " ++ fromColor c))
+        else sp ! A.style (toValue ("color: " ++ fromColor c))
+        
+    (_, Nothing) -> 
+      if titleAttributes opts
+        then sp ! A.title (toValue $ show toktype) 
+        else sp
+  where sp = H.span ! A.class_ (toValue $ short toktype) $ toHtml txt
 
 short :: TokenType -> String
 short KeywordTok        = "kw"

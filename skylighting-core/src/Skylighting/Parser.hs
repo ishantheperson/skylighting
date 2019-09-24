@@ -9,7 +9,7 @@ import Data.ByteString.UTF8 (fromString, toString)
 import qualified Data.ByteString as BS
 import Data.Char (isAlphaNum, toUpper)
 import qualified Data.Map as Map
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, maybe) 
 import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -138,10 +138,11 @@ extractSyntaxDefinition filename =
                 , sStartingContext = startingContext
                 }
 
-toItemDataTable :: [(String,String)] -> Map.Map String TokenType
-toItemDataTable = Map.fromList . map (\(s,t) -> (s, toTokenType t))
+toItemDataTable :: [(String, (String, String))] -> Map.Map String (TokenType, Maybe Color)
+-- FIXME: fromJust
+toItemDataTable = Map.fromList . map (\(s,(t, c)) -> (s, (toTokenType t, toColor c)))
 
-getItemDatas :: IOSArrow XmlTree [(String,String)]
+getItemDatas :: IOSArrow XmlTree [(String, (String, String))]
 getItemDatas =
   multi (hasName "itemDatas")
      >>>
@@ -149,7 +150,7 @@ getItemDatas =
              >>>
              hasName "itemData"
              >>>
-             getAttrValue "name" &&& getAttrValue "defStyleNum")
+             (getAttrValue "name" &&& getAttrValue "defStyleNum" &&& getAttrValue "color"))
 
 toTokenType :: String -> TokenType
 toTokenType s =
@@ -208,7 +209,7 @@ getListContents =
 getContexts ::
      (Bool,
        (String,
-         (Map.Map String TokenType,
+         (Map.Map String (TokenType, Maybe Color),
            ([(String, [String])], KeywordAttr))))
             -> IOSArrow XmlTree [Context]
 getContexts (casesensitive, (syntaxname, (itemdatas, (lists, kwattr)))) =
@@ -230,7 +231,7 @@ getContexts (casesensitive, (syntaxname, (itemdatas, (lists, kwattr)))) =
                      cName = Text.pack name
                    , cSyntax = Text.pack syntaxname
                    , cRules = parsers
-                   , cAttribute = fromMaybe NormalTok $
+                   , cAttribute = fromMaybe (NormalTok, Nothing) $
                            Map.lookup attribute itemdatas
                    , cLineEmptyContext =
                         parseContextSwitch syntaxname lineEmptyContext
@@ -255,7 +256,7 @@ readChar s = case s of
 
 getParsers :: (Bool,
                 (String,
-                  (Map.Map String TokenType,
+                  (Map.Map String (TokenType, Maybe Color),
                     ([(String, [String])], KeywordAttr))))
             -> String  -- context attribute
             -> IOSArrow XmlTree [Rule]
@@ -326,7 +327,7 @@ getParsers (casesensitive, (syntaxname, (itemdatas, (lists, kwattr)))) cattr =
                               then []  -- is this right?
                               else parseContextSwitch syntaxname context
        returnA -< Rule{ rMatcher = matcher,
-                        rAttribute = fromMaybe NormalTok $
+                        rAttribute = fromMaybe (NormalTok, Nothing) $
                            if null attribute
                               then Map.lookup cattr itemdatas
                               else Map.lookup attribute itemdatas,

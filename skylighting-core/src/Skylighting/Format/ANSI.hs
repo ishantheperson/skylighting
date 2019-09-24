@@ -40,7 +40,7 @@ tokenToANSI :: ANSIColorLevel -> Style -> Token -> Text
 tokenToANSI clv sty (tokTy, tokText) = ansiStyleText clv tokFgc tokBgc tokB tokI tokU
                                          <> tokText
                                          <> ansiStyleText clv (defaultColor sty) (backgroundColor sty) False False False
-    where TokenStyle tokFgcRaw tokBgcRaw tokB tokI tokU = fromMaybe defStyle . Map.lookup tokTy $ tokenStyles sty
+    where TokenStyle tokFgcRaw tokBgcRaw tokB tokI tokU = fromMaybe defStyle . Map.lookup (fst tokTy) $ tokenStyles sty
           tokFgc = tokFgcRaw `mplus` defaultColor sty
           tokBgc = tokBgcRaw `mplus` backgroundColor sty
 

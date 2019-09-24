@@ -344,7 +344,7 @@ tryRule rule inp = do
   doContextSwitches (rContextSwitch rule)
   return mbtok'
 
-withAttr :: TokenType -> TokenizerM Text -> TokenizerM (Maybe Token)
+withAttr :: ItemData -> TokenizerM Text -> TokenizerM (Maybe Token)
 withAttr tt p = do
   res <- p
   if Text.null res
@@ -398,7 +398,7 @@ normalChunk = do
         in  takeChars (BS.length bs)
       | otherwise -> takeChars 1
 
-includeRules :: Maybe TokenType -> ContextName -> ByteString
+includeRules :: Maybe ItemData -> ContextName -> ByteString
              -> TokenizerM (Maybe Token)
 includeRules mbattr (syn, con) inp = do
   syntaxes <- asks syntaxMap
@@ -411,7 +411,7 @@ includeRules mbattr (syn, con) inp = do
        Just c   -> do
          mbtok <- msum (map (\r -> tryRule r inp) (cRules c))
          return $ case (mbtok, mbattr) of
-                    (Just (NormalTok, xs), Just attr) -> Just (attr, xs)
+                    (Just ((NormalTok, _), xs), Just attr) -> Just (attr, xs)
                     _                                 -> mbtok
 
 checkLineEnd :: Context -> TokenizerM ()

@@ -21,6 +21,7 @@ module Skylighting.Types (
               , Syntax(..)
               , SyntaxMap
               -- * Tokens
+              , ItemData
               , Token
               , TokenType(..)
               , SourceLine
@@ -129,7 +130,7 @@ instance Binary ContextSwitch
 -- highlighting "context."
 data Rule = Rule{
     rMatcher          :: Matcher
-  , rAttribute        :: TokenType
+  , rAttribute        :: (TokenType, Maybe Color)
   , rIncludeAttribute :: Bool
   , rDynamic          :: Bool
   , rCaseSensitive    :: Bool
@@ -167,7 +168,7 @@ data Context = Context{
     cName               :: Text
   , cSyntax             :: Text
   , cRules              :: [Rule]
-  , cAttribute          :: TokenType
+  , cAttribute          :: (TokenType, Maybe Color)
   , cLineEmptyContext   :: [ContextSwitch]
   , cLineEndContext     :: [ContextSwitch]
   , cLineBeginContext   :: [ContextSwitch]
@@ -178,8 +179,9 @@ data Context = Context{
 
 instance Binary Context
 
+type ItemData = (TokenType, Maybe Color)
 -- | A pair consisting of a list of attributes and some text.
-type Token = (TokenType, Text)
+type Token = (ItemData, Text)
 
 -- | 'KeywordTok' corresponds to @dsKeyword@ in Kate syntax
 -- descriptions, and so on.
